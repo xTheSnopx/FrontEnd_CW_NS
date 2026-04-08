@@ -150,6 +150,58 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </div>
+
+      {/* Top Quemadores Table (Medical/Cyberpunk Data Style) */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+        className="glass-panel p-6 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.05)] border border-white/5 relative overflow-hidden mt-8"
+      >
+        {/* Decorative SCANline */}
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-red-500/50 animate-[scan_3s_ease-in-out_infinite_alternate] shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-2 w-2 rounded-sm bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+          <h3 className="text-lg font-bold text-slate-200 tracking-widest uppercase font-mono">Top Quemadores</h3>
+          <div className="flex-1 border-t border-dashed border-white/10 ml-4"></div>
+          <span className="text-[10px] text-red-500 font-mono bg-red-500/10 px-2 py-1 rounded border border-red-500/20">LIVE_DATA</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse font-mono text-sm">
+            <thead>
+              <tr className="text-slate-500 border-b border-white/10 text-xs">
+                <th className="py-3 px-4 font-normal uppercase tracking-widest">ID</th>
+                <th className="py-3 px-4 font-normal uppercase tracking-widest">Sujeto</th>
+                <th className="py-3 px-4 font-normal uppercase tracking-widest text-right">Reputación Base</th>
+                <th className="py-3 px-4 font-normal uppercase tracking-widest text-right">Delta Hoy (Δ)</th>
+                <th className="py-3 px-4 font-normal uppercase tracking-widest text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-300">
+              {[
+                { id: "NS-992", name: "Destra", base: 1250000, delta: 15420, status: "CRITICAL" },
+                { id: "NS-104", name: "Kage", base: 980500, delta: 12100, status: "ACTIVE" },
+                { id: "NS-455", name: "Rogue", base: 750000, delta: 8900, status: "ACTIVE" },
+                { id: "NS-881", name: "Shadow", base: 642000, delta: 3200, status: "STABLE" }
+              ].map((row, idx) => (
+                <tr key={idx} className="border-b border-white/5 hover:bg-red-500/5 transition-colors group">
+                  <td className="py-3 px-4 text-slate-500">[{row.id}]</td>
+                  <td className="py-3 px-4 font-bold text-slate-200 group-hover:text-red-400 transition-colors">{row.name}</td>
+                  <td className="py-3 px-4 text-right">{row.base.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-right font-bold text-emerald-400">+ {row.delta.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-center">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${row.status === 'CRITICAL' ? 'border-red-500/50 text-red-400 bg-red-500/10 animate-pulse' : row.status === 'ACTIVE' ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' : 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10'}`}>
+                      {row.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
     </div>
   );
 }

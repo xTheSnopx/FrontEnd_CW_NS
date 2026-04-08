@@ -27,9 +27,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       onSuccess?.(res.data.user);
       onClose(); // Close modal on success
       
-      if (isLogin) {
-          window.location.href = '/panel/dashboard';
-      }
+      window.location.href = '/panel/dashboard';
     } catch (err) {
       setError(err.response?.data?.message || 'Error en la conexión. Intenta de nuevo.');
     } finally {

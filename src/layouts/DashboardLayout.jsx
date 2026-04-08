@@ -1,7 +1,7 @@
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartPie, faUsers, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faChartPie, faUsers, faSignOutAlt, faBell } from '@fortawesome/free-solid-svg-icons';
 import React, { useEffect, useState } from 'react';
 
 export default function DashboardLayout() {
@@ -100,6 +100,33 @@ export default function DashboardLayout() {
           </div>
           
           <div className="flex items-center gap-4">
+             <div className="relative group cursor-pointer">
+                <FontAwesomeIcon icon={faBell} className="text-slate-400 hover:text-white transition-colors w-5 h-5 mr-2" />
+                <span className="absolute -top-1 -right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-[#121212]"></span>
+                
+                {/* Notification Dropdown */}
+                <div className="absolute right-0 mt-3 w-72 bg-[#0a0a0a]/95 backdrop-blur-xl border border-red-500/20 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none group-hover:pointer-events-auto z-50 overflow-hidden transform origin-top-right scale-95 group-hover:scale-100 font-mono">
+                  <div className="px-4 py-3 border-b border-white/5 bg-gradient-to-r from-red-900/20 to-transparent">
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Notificaciones</h4>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {[
+                      { msg: "SYSTEM: Nuevo registro detectado", time: "Hace 2 min", type: "info" },
+                      { msg: "CLAN: Has subido al TOP 3", time: "Hace 1 hora", type: "success" },
+                      { msg: "WARNING: Actividad baja detectada", time: "Hace 3 horas", type: "warning" }
+                    ].map((notif, idx) => (
+                      <div key={idx} className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
+                        <p className={`text-xs font-semibold ${notif.type === 'warning' ? 'text-amber-400' : notif.type === 'success' ? 'text-emerald-400' : 'text-slate-300'}`}>{notif.msg}</p>
+                        <p className="text-[10px] text-slate-500 mt-1">{notif.time}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-4 py-2 border-t border-white/5 text-center bg-black/50">
+                    <span className="text-[10px] text-red-400 hover:text-red-300 cursor-pointer font-bold uppercase tracking-widest transition-colors">Marcar todas leídas</span>
+                  </div>
+                </div>
+             </div>
+
              <div className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-lg text-xs font-semibold text-red-300 flex items-center gap-2 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
