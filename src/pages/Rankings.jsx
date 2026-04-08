@@ -117,21 +117,30 @@ export default function Rankings() {
                 <tr><td colSpan="9" className="px-4 py-8 text-center text-slate-500">Recopilando datos de la red...</td></tr>
               )}
               {!loading && filteredClans.map((clan, idx) => {
-                const rankStyle = getRankStyle(clan.rank || idx + 1);
+                const rank = clan.rank || idx + 1;
+                const rankStyle = getRankStyle(rank);
+                
+                // Add conditional row highlights for Top 3
+                let rowBg = "hover:bg-white/5";
+                let rowBorder = "border-b border-[#1e1e1e]";
+                if (rank === 1) rowBg = "bg-amber-500/5 hover:bg-amber-500/10 border-l-2 border-l-amber-500";
+                if (rank === 2) rowBg = "bg-slate-300/5 hover:bg-slate-300/10 border-l-2 border-l-slate-400";
+                if (rank === 3) rowBg = "bg-amber-700/5 hover:bg-amber-700/10 border-l-2 border-l-amber-700";
+
                 return (
                   <motion.tr 
                     key={clan.id || idx}
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(idx * 0.02, 0.5) }}
-                    className="hover:bg-white/5 transition-colors group cursor-pointer"
+                    className={`${rowBg} ${rowBorder} transition-colors group cursor-pointer`}
                     onClick={() => setSelectedClan(clan)}
                   >
                     {/* Rank */}
-                    <td className="px-4 py-2 text-center font-bold text-slate-300">
-                      {(clan.rank || idx + 1)}
+                    <td className="px-4 py-3 text-center font-bold text-slate-300">
+                      {rank}
                     </td>
 
                     {/* Clan Name & Badges */}
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-3">
                        <div className="flex items-center gap-2">
                           {rankStyle.icon && (
                             <FontAwesomeIcon icon={rankStyle.icon} className={`${rankStyle.color} text-[14px]`} />
@@ -151,18 +160,18 @@ export default function Rankings() {
                     </td>
 
                     {/* Atk -2 */}
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                        {formatDelta(clan.atk2)}
                     </td>
 
                     {/* Atk -1 */}
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                        <span className="text-amber-500">{clan.atk1 > 0 ? `+${clan.atk1.toLocaleString()}` : 0}</span>
                        <TrendIcon trend={clan.trend} />
                     </td>
 
                     {/* Activos (Circles) */}
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-3">
                        <div className="flex items-center justify-center">
                           <div className="relative flex items-center justify-center w-6 h-6 rounded-full border border-slate-700 bg-[#151515]">
                              <span className="text-[10px] text-slate-400">{clan.activeMembers}</span>
@@ -171,22 +180,22 @@ export default function Rankings() {
                     </td>
 
                     {/* Total Reputation */}
-                    <td className="px-4 py-2 text-right font-bold text-slate-200 tracking-wide text-[14px]">
+                    <td className="px-4 py-3 text-right font-bold text-slate-200 tracking-wide text-[14px]">
                       {clan.reputation?.toLocaleString()}
                     </td>
 
                     {/* Status Icon */}
-                    <td className="px-4 py-2 text-center">
+                    <td className="px-4 py-3 text-center">
                        <div className="text-slate-600 text-[10px]">0</div>
                     </td>
 
                     {/* 6h Delta */}
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                        {formatDelta(clan.sixHourDelta)}
                     </td>
 
                     {/* 24h Delta */}
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                        <span className="text-amber-400 font-medium">+{clan.twentyFourHourDelta?.toLocaleString()}</span>
                     </td>
                   </motion.tr>

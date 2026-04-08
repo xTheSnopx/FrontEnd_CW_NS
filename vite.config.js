@@ -8,8 +8,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5058',
-        changeOrigin: true
+        target: 'https://backend-cw-ns.onrender.com',
+        changeOrigin: true,
+        secure: false
       }
     }
   }
