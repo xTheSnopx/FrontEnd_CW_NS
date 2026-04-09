@@ -79,9 +79,13 @@ export default function Rankings() {
           isBleeding: sixHourDelta === 0 && currentRank <= 20
         };
       });
-      // Also fetch smart notifications in parallel
-      const notifRes = await axios.get('/api/data/notifications');
-      setNotifications(notifRes.data);
+      // Fetch smart notifications safely
+      try {
+        const notifRes = await axios.get('/api/data/notifications');
+        setNotifications(notifRes.data);
+      } catch (notifErr) {
+        console.warn("Notifications feed unavailable:", notifErr);
+      }
       
       setRankings({ ...res.data, clans: enrichedData });
     } catch (err) {
