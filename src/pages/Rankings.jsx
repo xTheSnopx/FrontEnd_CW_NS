@@ -8,6 +8,7 @@ import TiltedScroll from '../components/TiltedScroll';
 
 export default function Rankings() {
   const [rankings, setRankings] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClan, setSelectedClan] = useState(null);
@@ -78,6 +79,10 @@ export default function Rankings() {
           isBleeding: sixHourDelta === 0 && currentRank <= 20
         };
       });
+      // Also fetch smart notifications in parallel
+      const notifRes = await axios.get('/api/data/notifications');
+      setNotifications(notifRes.data);
+      
       setRankings({ ...res.data, clans: enrichedData });
     } catch (err) {
       console.error(err);
@@ -93,28 +98,13 @@ export default function Rankings() {
   const clans = rankings?.clans || [];
   const filteredClans = clans.filter(c => (c?.name || c?.clanName || '').toLowerCase().includes((searchTerm || '').trim().toLowerCase()));
 
-  // Generate tactical events for the Hoverboard (Marquee) based on bleeding clans
-  const bleedingEvents = clans
-    .filter(c => c.trend === 'down' || c.sixHourDelta < 0)
-    .map((c, i) => ({
-      id: `bleed-${c.name}-${i}`,
-      text: `[ADVERTENCIA] ${c?.name || c?.clanName} está perdiendo reputación críticamente (${c.sixHourDelta?.toLocaleString()} Rep)`,
-      icon: faSkullCrossbones,
-      color: 'text-rose-500'
-    }));
-  
-  // Pad the events if there aren't enough bleeding clans
-  const topGainers = clans
-    .filter(c => c.trend === 'up')
-    .slice(0, 2)
-    .map((c, i) => ({
-      id: `gain-${c.name}-${i}`,
-      text: `[SUBIDA] ${c?.name || c?.clanName} ha ganado posición dominante, +${c.twentyFourHourDelta?.toLocaleString()} Rep`,
-      icon: faFire,
-      color: 'text-amber-500'
-    }));
-
-  const hoverboardEvents = [...bleedingEvents, ...topGainers];
+  // Map API notifications directly to the Hoverboard Feed format
+  const hoverboardEvents = notifications.map(n => ({
+      id: `alert-${Math.random()}`,
+      text: n.msg,
+      icon: n.type === 'warning' ? faSkullCrossbones : (n.type === 'success' ? faFire : faShieldHalved),
+      color: n.type === 'warning' ? 'text-rose-500' : (n.type === 'success' ? 'text-emerald-400' : 'text-amber-500')
+  }));
 
   const getRankStyle = (rank) => {
     if (rank === 1) return { color: 'text-amber-400', icon: faTrophy };

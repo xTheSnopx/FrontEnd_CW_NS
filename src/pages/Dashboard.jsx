@@ -10,36 +10,36 @@ import DecayCard from '../components/DecayCard';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, Legend);
 
 export default function Dashboard() {
-  const [history, setHistory] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setUser(JSON.parse(localStorage.getItem('user')));
-    fetchHistory();
+    fetchProfile();
   }, []);
 
-  const fetchHistory = async () => {
+  const fetchProfile = async () => {
     try {
-      const res = await axios.get('/api/data/history', {
+      const res = await axios.get('/api/data/my-profile', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      setHistory(res.data);
+      setProfile(res.data);
     } catch (err) {
       console.error(err);
       if (err.response && err.response.status === 401) {
         localStorage.clear();
         window.location.href = '/';
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   // --- ALGORITHM: Rep/Minute Calculation & Projection ---
-  // If the backend history is empty (new user/no scrape), generate a highly realistic
-  // baseline history of the last 12 hours so the math engine has points to grab.
-  const activeHistory = history.length > 0 ? history : [...Array(12)].map((_, i) => ({
-    timestamp: new Date(Date.now() - (11 - i) * 60 * 60 * 1000).toISOString(),
-    points: 1500000 + (Math.sin(i / 1.5) * 40000) + (i * 12500) // Wavy ascending curve
-  })).reverse(); // Reverse to match our DB descending pattern (newest first)
+  const activeHistory = profile && profile.history && profile.history.length > 0 
+    ? profile.history 
+    : [];
 
   let currentRep = 0;
   let repPerMinute = 0;
@@ -155,16 +155,16 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Proyección Personal</h1>
-          <p className="text-slate-400 font-medium">Estadísticas de crecimiento en tiempo real controladas por IA.</p>
+          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Base de Operaciones: <span className="text-red-500">{profile?.clanName || 'Analizando...'}</span></h1>
+          <p className="text-slate-400 font-medium">Estadísticas de crecimiento personal y proyección algorítmica.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Nivel Actual" value="80" subtitle="MAX LEVEL EXP" icon={faShieldAlt} colorClass="border-sky-500" delay={0.1} />
-        <StatCard title="Reputación" value={currentRep.toLocaleString()} subtitle="HISTORIAL RECIENTE" icon={faKhanda} colorClass="border-violet-500 text-gradient" delay={0.2} />
-        <StatCard title="Ganancia / Minuto" value={`${repPerMinute > 0 ? '+' : ''}${repPerMinute.toFixed(1)}`} subtitle="TASA ACTUAL" icon={faArrowTrendUp} colorClass="border-emerald-500 text-emerald-400" delay={0.3} />
-        <StatCard title="Proyección / Hora" value={`${repPerHour > 0 ? '+' : ''}${Math.round(repPerHour).toLocaleString()}`} subtitle="ALGORITMO PREDICTIVO" icon={faClock} colorClass="border-cyan-500 text-cyan-400" delay={0.4} />
+        <StatCard title="Jugador" value={profile?.username || user?.username || 'Analizando...'} subtitle="ACTIVO" icon={faShieldAlt} colorClass="border-sky-500" delay={0.1} />
+        <StatCard title="Reputación" value={currentRep.toLocaleString()} subtitle="CANTIDAD ALMACENADA" icon={faKhanda} colorClass="border-violet-500 text-gradient" delay={0.2} />
+        <StatCard title="Ganancia / Minuto" value={`${repPerMinute > 0 ? '+' : ''}${repPerMinute.toFixed(1)}`} subtitle="TASA REAL" icon={faArrowTrendUp} colorClass="border-emerald-500 text-emerald-400" delay={0.3} />
+        <StatCard title="Proyección / Hora" value={`${repPerHour > 0 ? '+' : ''}${Math.round(repPerHour).toLocaleString()}`} subtitle="ALGORITMO ACTUAL" icon={faClock} colorClass="border-cyan-500 text-cyan-400" delay={0.4} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
@@ -182,8 +182,8 @@ export default function Dashboard() {
             image="https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=800&auto=format&fit=crop" 
             className="mb-8 shadow-[0_0_20px_rgba(239,68,68,0.4)]" 
           />
-          <h3 className="text-2xl font-black text-white tracking-widest uppercase mb-1">{user?.username || 'Ninja'}</h3>
-          <p className="text-red-400 font-mono text-xs tracking-widest mb-6 border border-red-500/30 bg-red-500/10 px-3 py-1 rounded-sm">RANGO: ELITE CHUNIN</p>
+          <h3 className="text-2xl font-black text-white tracking-widest uppercase mb-1">{profile?.username || user?.username || 'Ninja'}</h3>
+          <p className="text-red-400 font-mono text-[10px] tracking-widest mb-6 border border-red-500/30 bg-red-500/10 px-3 py-1 rounded-sm uppercase">Afiliación: {profile?.clanName || 'Analizando...'}</p>
           
           <div className="w-full bg-[#0a0a0a] rounded-lg p-4 border border-white/5">
              <div className="flex justify-between text-xs text-slate-400 mb-2 font-mono">

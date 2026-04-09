@@ -7,6 +7,7 @@ import axios from 'axios';
 
 export default function DashboardLayout() {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const location = useLocation();
@@ -20,6 +21,19 @@ export default function DashboardLayout() {
     // Load favorites
     const favs = JSON.parse(localStorage.getItem('clan_favorites') || '[]');
     setFavorites(favs);
+
+    // Fetch profile
+    const fetchProfile = async () => {
+       try {
+         const res = await axios.get('/api/data/my-profile', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+         });
+         setProfile(res.data);
+       } catch(err) {
+         console.log(err);
+       }
+    };
+    fetchProfile();
 
     // Fetch Notifications System
     const fetchNotifications = async () => {
@@ -47,7 +61,7 @@ export default function DashboardLayout() {
 
   const navItems = [
     { label: 'Ranking', path: '/panel/rankings', icon: faUsers },
-    { label: 'Proyección', path: '/panel/dashboard', icon: faChartPie },
+    { label: 'Mi Base', path: '/panel/dashboard', icon: faChartPie },
   ];
 
   return (
@@ -66,7 +80,9 @@ export default function DashboardLayout() {
             </div>
             <div>
               <h2 className="font-bold text-white tracking-wide">{user?.username || 'Cargando...'}</h2>
-              <p className="text-xs text-red-400">Espíritu Latino</p>
+              <p className="text-[11px] font-bold text-red-400 bg-red-950/40 px-2 py-0.5 rounded border border-red-500/20 inline-block mt-1">
+                 {profile?.clanName || 'Desconectado'}
+              </p>
             </div>
           </div>
         </div>
