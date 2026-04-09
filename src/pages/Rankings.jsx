@@ -70,7 +70,7 @@ export default function Rankings() {
           ...clan,
           atk2: 0,
           atk1: 0,
-          activeMembers: clan.members || 0,
+          activeMembers: clan.activeMembers || 0,
           sixHourDelta: sixHourDelta,
           twentyFourHourDelta: twentyFourHourDelta,
           streak: flames, 
