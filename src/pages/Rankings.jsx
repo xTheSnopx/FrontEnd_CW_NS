@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrophy, faSearch, faFireFlameCurved, faFire, faShieldHalved, faKhanda, faSortDown, faSortUp, faMinus, faCrosshairs, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
+import { faTrophy, faSearch, faFireFlameCurved, faFire, faShieldHalved, faKhanda, faSortDown, faSortUp, faMinus, faCrosshairs, faSkullCrossbones, faBell, faLineChart } from '@fortawesome/free-solid-svg-icons';
 import ClanModal from '../components/ClanModal';
 import TiltedScroll from '../components/TiltedScroll';
 
@@ -11,10 +11,28 @@ export default function Rankings() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClan, setSelectedClan] = useState(null);
+  const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem('clan_favorites') || '[]'));
+  
+  // Track previous ranks to show Up/Down chart arrows
+  const prevRanksRef = useRef({});
 
   useEffect(() => {
     fetchRankings();
+    const interval = setInterval(fetchRankings, 30000); // Polling real-time every 30s
+    return () => clearInterval(interval);
   }, []);
+
+  const toggleFavorite = (e, clanName) => {
+    e.stopPropagation();
+    let newFavs = [...favorites];
+    if (newFavs.includes(clanName)) {
+      newFavs = newFavs.filter(n => n !== clanName);
+    } else {
+      newFavs.push(clanName);
+    }
+    setFavorites(newFavs);
+    localStorage.setItem('clan_favorites', JSON.stringify(newFavs));
+  };
 
   const fetchRankings = async () => {
     try {
@@ -24,8 +42,22 @@ export default function Rankings() {
       const apiClans = Array.isArray(res?.data?.clans) ? res.data.clans : (Array.isArray(res?.data) ? res.data : []);
       
       const enrichedData = apiClans.map(clan => {
-        const isBleeding = Math.random() > 0.75;
-        const sixHourDelta = isBleeding ? -Math.floor(Math.random() * 15000) : Math.floor(Math.random() * 20000);
+        const clanName = clan?.name || clan?.clanName;
+        const currentRank = clan.rank;
+        const previousRank = prevRanksRef.current[clanName];
+        
+        let rankTrend = 'flat';
+        if (previousRank) {
+           if (currentRank < previousRank) rankTrend = 'up';   // Top 1 is < Top 2
+           if (currentRank > previousRank) rankTrend = 'down';
+        }
+        
+        // Update Ref for next poll
+        prevRanksRef.current[clanName] = currentRank;
+
+        // REAL Backend mathematical data processing
+        const sixHourDelta = clan.sixHourDelta || 0;
+        const twentyFourHourDelta = clan.twentyFourHourDelta || 0;
         
         let flames = 0;
         if (sixHourDelta >= 5000) flames = 1;
@@ -33,15 +65,17 @@ export default function Rankings() {
         if (sixHourDelta >= 15000) flames = 3;
         if (sixHourDelta >= 18000) flames = 4;
 
+        // Setting empty placeholders to 0 until API backend provides them
         return {
           ...clan,
-          atk2: Math.floor(Math.random() * 10000),
-          atk1: Math.floor(Math.random() * 2000),
-          activeMembers: Math.floor(Math.random() * 30),
+          atk2: 0,
+          atk1: 0,
+          activeMembers: clan.members || 0,
           sixHourDelta: sixHourDelta,
-          twentyFourHourDelta: isBleeding ? -Math.floor(Math.random() * 30000) : Math.floor(Math.random() * 50000),
+          twentyFourHourDelta: twentyFourHourDelta,
           streak: flames, 
-          trend: isBleeding ? 'down' : (Math.random() > 0.5 ? 'up' : 'flat')
+          trend: rankTrend,
+          isBleeding: sixHourDelta === 0 && currentRank <= 20
         };
       });
       setRankings({ ...res.data, clans: enrichedData });
@@ -159,6 +193,8 @@ export default function Rankings() {
               {!loading && filteredClans.map((clan, idx) => {
                 const rank = clan.rank || idx + 1;
                 const rankStyle = getRankStyle(rank);
+                const clanName = clan?.name || clan?.clanName || 'Desconocido';
+                const isFav = favorites.includes(clanName);
                 
                 // Add conditional row highlights for Top 3
                 let rowBg = "hover:bg-white/5";
@@ -175,18 +211,29 @@ export default function Rankings() {
                     onClick={() => setSelectedClan(clan)}
                   >
                     {/* Rank */}
-                    <td className="px-4 py-3 text-center font-bold text-slate-300">
-                      {rank}
+                    <td className="px-4 py-3 text-center font-bold text-slate-300 relative">
+                      <div className="flex items-center justify-center gap-1">
+                        {rank}
+                        {clan.trend === 'up' && <FontAwesomeIcon icon={faLineChart} className="text-emerald-500 ml-1 text-[11px]" title="Subió de puesto" />}
+                        {clan.trend === 'down' && <FontAwesomeIcon icon={faLineChart} className="text-rose-500 ml-1 text-[11px] scale-y-[-1]" title="Bajó de puesto" />}
+                      </div>
                     </td>
 
                     {/* Clan Name & Badges */}
                     <td className="px-4 py-3">
                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={(e) => toggleFavorite(e, clanName)}
+                            className="p-1 mr-1 hover:bg-slate-800 rounded-lg transition-colors"
+                            title="Marcar como objetivo"
+                          >
+                            <FontAwesomeIcon icon={faBell} className={`text-[12px] ${isFav ? 'text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]' : 'text-slate-600'}`} />
+                          </button>
                           {rankStyle.icon && (
                             <FontAwesomeIcon icon={rankStyle.icon} className={`${rankStyle.color} text-[14px]`} />
                           )}
-                          <span className="font-bold text-white group-hover:text-emerald-400 transition-colors">
-                            {clan?.name || clan?.clanName || 'Desconocido'} <span className="text-slate-500 font-normal ml-1">[{clan?.members || 40}]</span>
+                          <span className={`${isFav ? 'text-violet-100 font-bold' : 'text-white font-bold'} group-hover:text-emerald-400 transition-colors`}>
+                            {clanName} <span className="text-slate-500 font-normal ml-1">[{clan?.members || 40}]</span>
                           </span>
                           {/* Fire Streaks */}
                           {clan.streak > 0 && (
@@ -207,7 +254,6 @@ export default function Rankings() {
                     {/* Atk -1 */}
                     <td className="px-4 py-3 text-right">
                        <span className="text-amber-500">{clan.atk1 > 0 ? `+${clan.atk1.toLocaleString()}` : 0}</span>
-                       <TrendIcon trend={clan.trend} />
                     </td>
 
                     {/* Activos (Circles) */}

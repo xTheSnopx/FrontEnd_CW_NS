@@ -3,9 +3,12 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartPie, faUsers, faSignOutAlt, faBell } from '@fortawesome/free-solid-svg-icons';
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function DashboardLayout() {
   const [user, setUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const location = useLocation();
 
   useEffect(() => {
@@ -13,6 +16,23 @@ export default function DashboardLayout() {
     if (userStr) {
       setUser(JSON.parse(userStr));
     }
+    
+    // Load favorites
+    const favs = JSON.parse(localStorage.getItem('clan_favorites') || '[]');
+    setFavorites(favs);
+
+    // Fetch Notifications System
+    const fetchNotifications = async () => {
+       try {
+         const res = await axios.get('/api/data/notifications');
+         setNotifications(res.data);
+       } catch(err) {
+         console.log(err);
+       }
+    };
+    fetchNotifications();
+    const intv = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(intv);
   }, []);
 
   const handleLogout = () => {
@@ -110,19 +130,24 @@ export default function DashboardLayout() {
                     <h4 className="text-sm font-bold text-white uppercase tracking-wider">Notificaciones</h4>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
-                    {[
-                      { msg: "SYSTEM: Nuevo registro detectado", time: "Hace 2 min", type: "info" },
-                      { msg: "CLAN: Has subido al TOP 3", time: "Hace 1 hora", type: "success" },
-                      { msg: "WARNING: Actividad baja detectada", time: "Hace 3 horas", type: "warning" }
-                    ].map((notif, idx) => (
-                      <div key={idx} className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
-                        <p className={`text-xs font-semibold ${notif.type === 'warning' ? 'text-amber-400' : notif.type === 'success' ? 'text-emerald-400' : 'text-slate-300'}`}>{notif.msg}</p>
-                        <p className="text-[10px] text-slate-500 mt-1">{notif.time}</p>
-                      </div>
-                    ))}
+                    {notifications.length === 0 ? (
+                       <div className="px-4 py-8 text-center text-slate-500 text-xs">Cargando sensores...</div>
+                    ) : notifications.map((notif, idx) => {
+                       // Filter feature: if notification pertains to a specific clan, highlight if favorite.
+                       const isTargeted = notif.clan && favorites.includes(notif.clan);
+                       const styleAddon = isTargeted ? 'bg-violet-500/10 border-l-2 border-violet-500' : 'hover:bg-white/5 border-b border-white/5';
+                       
+                       return (
+                          <div key={idx} className={`px-4 py-3 transition-colors cursor-pointer ${styleAddon}`}>
+                            {isTargeted && <span className="text-[9px] bg-violet-600 text-white px-1 py-0.5 rounded mr-2 uppercase">Target</span>}
+                            <p className={`inline text-xs font-semibold ${notif.type === 'warning' ? 'text-amber-400' : notif.type === 'success' ? 'text-emerald-400' : 'text-slate-300'}`}>{notif.msg}</p>
+                            <p className="text-[10px] text-slate-500 mt-1">{notif.time}</p>
+                          </div>
+                       );
+                    })}
                   </div>
                   <div className="px-4 py-2 border-t border-white/5 text-center bg-black/50">
-                    <span className="text-[10px] text-red-400 hover:text-red-300 cursor-pointer font-bold uppercase tracking-widest transition-colors">Marcar todas leídas</span>
+                    <span className="text-[10px] text-red-400 hover:text-red-300 cursor-pointer font-bold uppercase tracking-widest transition-colors">Refrescar Tácticas</span>
                   </div>
                 </div>
              </div>

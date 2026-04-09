@@ -14,7 +14,15 @@ export default function ClanModal({ clan, onClose }) {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         const map = {};
-        res.data.forEach(g => { map[g.member_name] = g; });
+        // Note: the backend uses PascalCase serialization by default in recent .NET unless configured
+        // so we check both memberName and MemberName patterns
+        res.data.forEach(g => { 
+            const memberName = g.memberName || g.MemberName;
+            map[memberName] = {
+                prevPoints: g.prevPoints || g.PrevPoints,
+                delta6h: g.delta6h || g.Delta6h
+            }; 
+        });
         setGains(map);
       } catch (err) {
         console.error(err);
@@ -73,12 +81,28 @@ export default function ClanModal({ clan, onClose }) {
                 const gainData = gains[m.name];
                 let deltaHtml = null;
                 
-                if (gainData && gainData.prev_points !== null) {
-                   const delta = gainData.latest_points - gainData.prev_points;
+                if (gainData && gainData.prevPoints !== null) {
+                   const delta = gainData.delta6h || 0;
+                   
+                   let flames = 0;
+                   if (delta >= 5000) flames = 1;
+                   if (delta >= 10000) flames = 2;
+                   if (delta >= 15000) flames = 3;
+                   if (delta >= 18000) flames = 4;
+                   
                    if (delta > 0) {
                       deltaHtml = (
-                        <div className="flex items-center gap-1 text-red-400 font-bold text-[13px] bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
-                          <TrendingUp className="w-3 h-3" /> +{delta.toLocaleString()} 🔥
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="flex items-center gap-1 text-red-400 font-bold text-[13px] bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
+                            <TrendingUp className="w-3 h-3" /> +{delta.toLocaleString()}
+                          </div>
+                          {flames > 0 && (
+                            <div className="flex gap-0.5">
+                                {[...Array(flames)].map((_, i) => (
+                                    <span key={i} className="text-[13px] drop-shadow-[0_0_5px_rgba(249,115,22,0.8)]">🔥</span>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       );
                    } else if (delta < 0) {
