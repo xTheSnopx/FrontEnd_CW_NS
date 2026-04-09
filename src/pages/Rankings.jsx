@@ -25,14 +25,22 @@ export default function Rankings() {
       
       const enrichedData = apiClans.map(clan => {
         const isBleeding = Math.random() > 0.75;
+        const sixHourDelta = isBleeding ? -Math.floor(Math.random() * 15000) : Math.floor(Math.random() * 20000);
+        
+        let flames = 0;
+        if (sixHourDelta >= 5000) flames = 1;
+        if (sixHourDelta >= 10000) flames = 2;
+        if (sixHourDelta >= 15000) flames = 3;
+        if (sixHourDelta >= 18000) flames = 4;
+
         return {
           ...clan,
           atk2: Math.floor(Math.random() * 10000),
           atk1: Math.floor(Math.random() * 2000),
           activeMembers: Math.floor(Math.random() * 30),
-          sixHourDelta: isBleeding ? -Math.floor(Math.random() * 15000) : Math.floor(Math.random() * 20000),
+          sixHourDelta: sixHourDelta,
           twentyFourHourDelta: isBleeding ? -Math.floor(Math.random() * 30000) : Math.floor(Math.random() * 50000),
-          streak: Math.floor(Math.random() * 4), 
+          streak: flames, 
           trend: isBleeding ? 'down' : (Math.random() > 0.5 ? 'up' : 'flat')
         };
       });

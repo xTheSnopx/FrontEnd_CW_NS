@@ -92,7 +92,7 @@ export default function DashboardLayout() {
         <div className="absolute top-0 left-10 w-3/4 h-32 bg-red-600 rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
 
         {/* Topbar */}
-        <header className="h-16 px-8 flex items-center justify-between border-b border-red-900/50 glass-panel z-10 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur-md">
+        <header className="h-16 px-8 flex items-center justify-between border-b border-red-900/50 glass-panel z-50 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur-md">
           <div className="text-sm font-medium text-slate-400 flex items-center gap-2">
             <span>Usuario</span>
             <span className="text-red-600">/</span>
