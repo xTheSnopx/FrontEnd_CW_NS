@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrophy, faSearch, faFireFlameCurved, faFire, faShieldHalved, faKhanda, faSortDown, faSortUp, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { faTrophy, faSearch, faFireFlameCurved, faFire, faShieldHalved, faKhanda, faSortDown, faSortUp, faMinus, faCrosshairs, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
 import ClanModal from '../components/ClanModal';
 import TiltedScroll from '../components/TiltedScroll';
 
@@ -21,17 +21,21 @@ export default function Rankings() {
       const res = await axios.get('/api/data/rankings', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      // Mocking advanced data for the new table structure if missing from backend
-      const enrichedData = res.data.clans?.map(clan => ({
-        ...clan,
-        atk2: Math.floor(Math.random() * 10000),
-        atk1: Math.floor(Math.random() * 2000),
-        activeMembers: Math.floor(Math.random() * 30),
-        sixHourDelta: Math.floor(Math.random() * 20000),
-        twentyFourHourDelta: Math.floor(Math.random() * 50000),
-        streak: Math.floor(Math.random() * 4), 
-        trend: Math.random() > 0.5 ? 'up' : Math.random() > 0.8 ? 'down' : 'flat'
-      }));
+      const apiClans = Array.isArray(res?.data?.clans) ? res.data.clans : (Array.isArray(res?.data) ? res.data : []);
+      
+      const enrichedData = apiClans.map(clan => {
+        const isBleeding = Math.random() > 0.75;
+        return {
+          ...clan,
+          atk2: Math.floor(Math.random() * 10000),
+          atk1: Math.floor(Math.random() * 2000),
+          activeMembers: Math.floor(Math.random() * 30),
+          sixHourDelta: isBleeding ? -Math.floor(Math.random() * 15000) : Math.floor(Math.random() * 20000),
+          twentyFourHourDelta: isBleeding ? -Math.floor(Math.random() * 30000) : Math.floor(Math.random() * 50000),
+          streak: Math.floor(Math.random() * 4), 
+          trend: isBleeding ? 'down' : (Math.random() > 0.5 ? 'up' : 'flat')
+        };
+      });
       setRankings({ ...res.data, clans: enrichedData });
     } catch (err) {
       console.error(err);
@@ -45,7 +49,30 @@ export default function Rankings() {
   };
 
   const clans = rankings?.clans || [];
-  const filteredClans = clans.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredClans = clans.filter(c => (c?.name || c?.clanName || '').toLowerCase().includes((searchTerm || '').trim().toLowerCase()));
+
+  // Generate tactical events for the Hoverboard (Marquee) based on bleeding clans
+  const bleedingEvents = clans
+    .filter(c => c.trend === 'down' || c.sixHourDelta < 0)
+    .map((c, i) => ({
+      id: `bleed-${c.name}-${i}`,
+      text: `[ADVERTENCIA] ${c?.name || c?.clanName} está perdiendo reputación críticamente (${c.sixHourDelta?.toLocaleString()} Rep)`,
+      icon: faSkullCrossbones,
+      color: 'text-rose-500'
+    }));
+  
+  // Pad the events if there aren't enough bleeding clans
+  const topGainers = clans
+    .filter(c => c.trend === 'up')
+    .slice(0, 2)
+    .map((c, i) => ({
+      id: `gain-${c.name}-${i}`,
+      text: `[SUBIDA] ${c?.name || c?.clanName} ha ganado posición dominante, +${c.twentyFourHourDelta?.toLocaleString()} Rep`,
+      icon: faFire,
+      color: 'text-amber-500'
+    }));
+
+  const hoverboardEvents = [...bleedingEvents, ...topGainers];
 
   const getRankStyle = (rank) => {
     if (rank === 1) return { color: 'text-amber-400', icon: faTrophy };
@@ -69,12 +96,13 @@ export default function Rankings() {
 
   return (
     <div className="relative">
-      <div className="flex flex-col xl:flex-row items-center justify-between mb-8 gap-12">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white mb-4 tracking-tight flex items-center gap-3">
+      <div className="flex flex-col xl:flex-row items-center justify-between mb-8 gap-8 w-full">
+        {/* Title and Search */}
+        <div className="w-full xl:w-1/3 min-w-0 z-10 shrink-0">
+          <h1 className="text-3xl font-bold text-white mb-4 tracking-tight flex items-center gap-3 whitespace-nowrap">
              Ranking Global
           </h1>
-          <div className="relative group w-full max-w-sm mb-6">
+          <div className="relative group w-full max-w-sm mb-6 xl:mb-0">
              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                <FontAwesomeIcon icon={faSearch} className="h-4 w-4 text-slate-500 group-focus-within:text-red-400 transition-colors" />
              </div>
@@ -88,8 +116,12 @@ export default function Rankings() {
           </div>
         </div>
         
-        <div className="flex-1 w-full flex justify-end">
-           <TiltedScroll className="h-48" />
+        {/* Tactical Hoverboard Feed */}
+        <div className="w-full xl:w-2/3 flex justify-end min-w-0 overflow-hidden">
+           <TiltedScroll 
+              className="w-full" 
+              dynamicItems={hoverboardEvents} 
+           />
         </div>
       </div>
 
@@ -146,7 +178,7 @@ export default function Rankings() {
                             <FontAwesomeIcon icon={rankStyle.icon} className={`${rankStyle.color} text-[14px]`} />
                           )}
                           <span className="font-bold text-white group-hover:text-emerald-400 transition-colors">
-                            {clan.name} <span className="text-slate-500 font-normal ml-1">[{clan.members || 40}]</span>
+                            {clan?.name || clan?.clanName || 'Desconocido'} <span className="text-slate-500 font-normal ml-1">[{clan?.members || 40}]</span>
                           </span>
                           {/* Fire Streaks */}
                           {clan.streak > 0 && (

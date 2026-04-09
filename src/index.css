@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-primary: #8b5cf6;
-  --color-brand-secondary: #0ea5e9;
-  --color-gradient-start: #0f172a;
-  --color-gradient-end: #1e1b4b;
-  --color-panel-bg: rgba(30, 41, 59, 0.7);
+  --color-brand-primary: #dc2626; /* neon red */
+  --color-brand-secondary: #ff0000; /* pure red */
+  --color-gradient-start: #000000; /* pure black */
+  --color-gradient-end: #0a0000; /* very dark red-black */
+  --color-panel-bg: rgba(10, 10, 10, 0.85); /* black glass */
   --color-danger: #ef4444;
   --color-success: #22c55e;
 }
@@ -48,15 +48,15 @@ body {
   animation: shine 5s linear infinite;
 }
 
-@keyframes skew-scroll {
+@keyframes marquee {
   0% {
-    transform: rotateX(20deg) rotateZ(-20deg) skewX(20deg) translateZ(0) translateY(0);
+    transform: translateX(0);
   }
   100% {
-    transform: rotateX(20deg) rotateZ(-20deg) skewX(20deg) translateZ(0) translateY(-100%);
+    transform: translateX(-50%);
   }
 }
 
-.animate-skew-scroll {
-  animation: skew-scroll 20s linear infinite;
+.animate-marquee {
+  animation: marquee 25s linear infinite;
 }
